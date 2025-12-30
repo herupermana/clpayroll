@@ -1,0 +1,102 @@
+
+import React from 'react';
+import Layout from './components/Layout';
+import Dashboard from './components/Dashboard';
+import EmployeeList from './components/EmployeeList';
+import PayrollProcessor from './components/PayrollProcessor';
+import SalarySlip from './components/SalarySlip';
+import { Employee, PayrollRecord } from './types';
+import { INITIAL_EMPLOYEES } from './constants.tsx';
+
+const App: React.FC = () => {
+  const [activeTab, setActiveTab] = React.useState('dashboard');
+  const [employees, setEmployees] = React.useState<Employee[]>(INITIAL_EMPLOYEES);
+  const [records, setRecords] = React.useState<PayrollRecord[]>([]);
+
+  const handleAddRecord = (record: PayrollRecord) => {
+    setRecords(prev => [record, ...prev]);
+  };
+
+  const handleDeleteEmployees = (ids: string[]) => {
+    if (confirm(`Are you sure you want to delete ${ids.length} employee(s)?`)) {
+      setEmployees(prev => prev.filter(emp => !ids.includes(emp.id)));
+    }
+  };
+
+  const handleBulkUpdateStatus = (ids: string[], status: 'ACTIVE' | 'INACTIVE') => {
+    setEmployees(prev => prev.map(emp => 
+      ids.includes(emp.id) ? { ...emp, status } : emp
+    ));
+  };
+
+  const handleSaveEmployee = (newEmp: Employee) => {
+    setEmployees(prev => {
+      const index = prev.findIndex(e => e.id === newEmp.id);
+      if (index > -1) {
+        // Update existing
+        const updated = [...prev];
+        updated[index] = newEmp;
+        return updated;
+      } else {
+        // Create new
+        return [newEmp, ...prev];
+      }
+    });
+  };
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return <Dashboard records={records} employeesCount={employees.length} />;
+      case 'employees':
+        return (
+          <EmployeeList 
+            employees={employees} 
+            onDeleteEmployees={handleDeleteEmployees}
+            onBulkUpdateStatus={handleBulkUpdateStatus}
+            onSaveEmployee={handleSaveEmployee}
+          />
+        );
+      case 'payroll':
+        const activeEmployees = employees.filter(e => e.status === 'ACTIVE');
+        return (
+          <div className="space-y-8">
+            <PayrollProcessor 
+              employees={activeEmployees} 
+              existingRecords={records}
+              onAddRecord={handleAddRecord}
+            />
+            
+            {records.length > 0 && (
+              <div className="mt-12">
+                <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center space-x-2">
+                  <span className="w-1.5 h-6 bg-indigo-500 rounded-full inline-block"></span>
+                  <span>Latest Salary Slip Preview</span>
+                </h3>
+                <div className="max-w-4xl mx-auto">
+                  <SalarySlip record={records[0]} />
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      case 'settings':
+        return (
+          <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center">
+            <h2 className="text-2xl font-bold text-slate-800 mb-4">System Settings</h2>
+            <p className="text-slate-500">Global payroll configurations and user permissions would be managed here.</p>
+          </div>
+        );
+      default:
+        return <Dashboard records={records} employeesCount={employees.length} />;
+    }
+  };
+
+  return (
+    <Layout activeTab={activeTab} setActiveTab={setActiveTab}>
+      {renderContent()}
+    </Layout>
+  );
+};
+
+export default App;

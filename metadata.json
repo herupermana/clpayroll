@@ -1,0 +1,5 @@
+{
+  "name": "PayStream - Advanced Payroll System",
+  "description": "A comprehensive payroll management application for daily and monthly employees, featuring custom date calculations, salary slip generation, and AI-powered payroll insights.",
+  "requestFramePermissions": []
+}
