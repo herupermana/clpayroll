@@ -7,6 +7,12 @@ export enum EmployeeType {
 export type EmployeeStatus = 'ACTIVE' | 'INACTIVE';
 export type EmploymentStatus = 'CONTRACT' | 'PERMANENT';
 
+export interface AppSettings {
+  bpjsPercentage: number;
+  defaultDailyBpjsBase: number;
+  defaultMonthlyBpjsBase: number;
+}
+
 export interface Employee {
   id: string;
   name: string;

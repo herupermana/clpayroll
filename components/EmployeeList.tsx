@@ -1,20 +1,22 @@
 
 import React from 'react';
 import { Plus, Search, Edit2, Trash2, Ban, CheckCircle, Trash, X, Phone, Calendar, Briefcase, CreditCard, Home, ShieldCheck } from 'lucide-react';
-import { Employee, EmployeeType, EmployeeStatus, EmploymentStatus } from '../types';
+import { Employee, EmployeeType, EmployeeStatus, EmploymentStatus, AppSettings } from '../types';
 
 interface EmployeeListProps {
   employees: Employee[];
   onDeleteEmployees: (ids: string[]) => void;
   onBulkUpdateStatus: (ids: string[], status: EmployeeStatus) => void;
   onSaveEmployee: (employee: Employee) => void;
+  settings: AppSettings;
 }
 
 const EmployeeList: React.FC<EmployeeListProps> = ({ 
   employees, 
   onDeleteEmployees, 
   onBulkUpdateStatus,
-  onSaveEmployee
+  onSaveEmployee,
+  settings
 }) => {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
@@ -219,6 +221,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
           employee={editingEmployee} 
           onClose={() => setIsModalOpen(false)} 
           onSave={onSaveEmployee} 
+          settings={settings}
         />
       )}
     </div>
@@ -229,14 +232,15 @@ const EmployeeModal: React.FC<{
   employee: Employee | null;
   onClose: () => void;
   onSave: (emp: Employee) => void;
-}> = ({ employee, onClose, onSave }) => {
+  settings: AppSettings;
+}> = ({ employee, onClose, onSave, settings }) => {
   const [formData, setFormData] = React.useState<Partial<Employee>>(
     employee || {
       status: 'ACTIVE',
       type: EmployeeType.MONTHLY,
       employmentStatus: 'PERMANENT',
-      bpjsPercentage: 4,
-      bpjsBase: 0,
+      bpjsPercentage: settings.bpjsPercentage,
+      bpjsBase: settings.defaultMonthlyBpjsBase,
       joinDate: new Date().toISOString().split('T')[0]
     }
   );
@@ -253,9 +257,25 @@ const EmployeeModal: React.FC<{
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
+    let newValue: any = type === 'number' ? parseFloat(value) : value;
+    
+    // Auto-adjust default BPJS base if changing type for a NEW employee
+    if (!employee && name === 'type') {
+      const newBpjsBase = value === EmployeeType.DAILY 
+        ? settings.defaultDailyBpjsBase 
+        : settings.defaultMonthlyBpjsBase;
+      
+      setFormData(prev => ({
+        ...prev,
+        [name]: newValue,
+        bpjsBase: newBpjsBase
+      }));
+      return;
+    }
+
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'number' ? parseFloat(value) : value
+      [name]: newValue
     }));
   };
 

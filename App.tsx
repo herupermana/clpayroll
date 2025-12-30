@@ -5,13 +5,28 @@ import Dashboard from './components/Dashboard';
 import EmployeeList from './components/EmployeeList';
 import PayrollProcessor from './components/PayrollProcessor';
 import SalarySlip from './components/SalarySlip';
-import { Employee, PayrollRecord } from './types';
+import Settings from './components/Settings';
+import { Employee, PayrollRecord, AppSettings } from './types';
 import { INITIAL_EMPLOYEES } from './constants.tsx';
 
 const App: React.FC = () => {
   const [activeTab, setActiveTab] = React.useState('dashboard');
   const [employees, setEmployees] = React.useState<Employee[]>(INITIAL_EMPLOYEES);
   const [records, setRecords] = React.useState<PayrollRecord[]>([]);
+  
+  // Settings management with localStorage persistence
+  const [settings, setSettings] = React.useState<AppSettings>(() => {
+    const saved = localStorage.getItem('paystream_settings');
+    return saved ? JSON.parse(saved) : {
+      bpjsPercentage: 4,
+      defaultDailyBpjsBase: 4500000,
+      defaultMonthlyBpjsBase: 9500000
+    };
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem('paystream_settings', JSON.stringify(settings));
+  }, [settings]);
 
   const handleAddRecord = (record: PayrollRecord) => {
     setRecords(prev => [record, ...prev]);
@@ -55,6 +70,7 @@ const App: React.FC = () => {
             onDeleteEmployees={handleDeleteEmployees}
             onBulkUpdateStatus={handleBulkUpdateStatus}
             onSaveEmployee={handleSaveEmployee}
+            settings={settings}
           />
         );
       case 'payroll':
@@ -81,12 +97,7 @@ const App: React.FC = () => {
           </div>
         );
       case 'settings':
-        return (
-          <div className="bg-white p-12 rounded-2xl border border-slate-200 text-center">
-            <h2 className="text-2xl font-bold text-slate-800 mb-4">System Settings</h2>
-            <p className="text-slate-500">Global payroll configurations and user permissions would be managed here.</p>
-          </div>
-        );
+        return <Settings settings={settings} onUpdateSettings={setSettings} />;
       default:
         return <Dashboard records={records} employeesCount={employees.length} />;
     }
